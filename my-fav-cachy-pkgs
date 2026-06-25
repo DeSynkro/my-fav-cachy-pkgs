@@ -1,0 +1,183 @@
+#!/bin/bash
+set -euo pipefail
+
+BOLD='\033[1m'; DIM='\033[2m'; RESET='\033[0m'
+C_RED='\033[31m'; C_GREEN='\033[32m'; C_YELLOW='\033[33m'
+C_BLUE='\033[34m'; C_CYAN='\033[36m'; C_WHITE='\033[37m'; C_GRAY='\033[90m'
+
+items=()
+add_item() { items+=("$1|$2|$3"); }
+
+add_item header "Media Production" ""
+add_item pkg    "audacity"         "repo"
+add_item pkg    "blender"          "repo"
+add_item pkg    "darktable"        "repo"
+add_item pkg    "gimp"             "repo"
+add_item pkg    "handbrake"        "repo"
+add_item pkg    "inkscape"         "repo"
+add_item pkg    "kdenlive"         "repo"
+add_item pkg    "krita"            "repo"
+add_item pkg    "eyedropper"       "repo"
+
+add_item header "Browsers & Internet" ""
+add_item pkg    "brave-origin-bin"  "repo"
+add_item pkg    "librewolf-bin"     "repo"
+add_item pkg    "localsend"         "repo"
+add_item pkg    "qbittorrent"       "repo"
+add_item pkg    "signal-desktop"    "repo"
+add_item pkg    "vesktop"           "repo"
+add_item pkg    "pear-desktop"      "repo"
+add_item pkg    "proton-mail-bin"   "repo"
+
+add_item header "Gaming" ""
+add_item pkg    "protonplus"    "repo"
+add_item pkg    "prismlauncher" "repo"
+add_item pkg    "steam"         "repo"
+
+add_item header "Productivity & Cloud" ""
+add_item pkg    "bitwarden"       "repo"
+add_item pkg    "deskflow"        "repo"
+add_item pkg    "syncthing"       "repo"
+add_item pkg    "onlyoffice-bin"  "repo"
+
+add_item header "System Tools" ""
+add_item pkg    "docker"              "repo"
+add_item pkg    "docker-compose"      "repo"
+add_item pkg    "gparted"             "repo"
+add_item pkg    "timeshift"           "repo"
+add_item pkg    "pika-backup"         "repo"
+add_item pkg    "gnome-disk-utility"  "repo"
+add_item pkg    "kvantum"             "repo"
+add_item pkg    "openrgb"             "repo"
+add_item pkg    "atuin"               "repo"
+
+add_item header "Media Playback" ""
+add_item pkg    "vlc"              "repo"
+add_item pkg    "spotify-launcher" "repo"
+
+add_item header "Security" ""
+add_item pkg    "gufw"  "repo"
+
+add_item header "GPU & Display" ""
+add_item pkg    "gpu-screen-recorder"    "repo"
+add_item pkg    "gpu-screen-recorder-ui" "repo"
+
+add_item header "VPN & Remote" ""
+add_item pkg    "proton-vpn-gtk-app"  "repo"
+
+add_item header "AUR Only" ""
+add_item pkg    "beacn-utility"     "aur"
+add_item pkg    "filebot"           "aur"
+add_item pkg    "lmstudio-bin"      "aur"
+add_item pkg    "lsfg-vk-git"       "aur"
+add_item pkg    "millennium"        "aur"
+add_item pkg    "ookla-speedtest-bin" "aur"
+add_item pkg    "pipeweaver"        "aur"
+add_item pkg    "r2modman-bin"      "aur"
+add_item pkg    "rustdesk-bin"      "aur"
+add_item pkg    "sc0710-dkms-git"   "aur"
+add_item pkg    "syncthingtray"     "aur"
+
+add_item header "Flatpaks" ""
+add_item pkg    "appflowy"  "flatpak"
+add_item pkg    "parabolic" "flatpak"
+
+declare -A is_installed
+check_installed() {
+    local pkgs flatpaks
+    pkgs=$(pacman -Qq 2>/dev/null || true)
+    flatpaks=$(flatpak list --columns=application 2>/dev/null || true)
+    for item in "${items[@]}"; do
+        IFS='|' read -r typ name src _ <<< "$item"
+        [[ "$typ" != "pkg" ]] && continue
+        case $src in
+            flatpak) echo "$flatpaks" | grep -iq "$name" && is_installed["$name"]=1 || true ;;
+            *) echo "$pkgs" | grep -qxF "$name" && is_installed["$name"]=1 || true ;;
+        esac
+    done
+}
+
+build_menu() {
+    echo "  ╔════════════════════════════════╗"
+    echo "  ║      MY FAV CACHY PKGS         ║"
+    echo "  ║     pick • Tab • Enter         ║"
+    echo "  ╚════════════════════════════════╝"
+    echo ""
+    for item in "${items[@]}"; do
+        IFS='|' read -r typ name src _ <<< "$item"
+        if [[ "$typ" == "header" ]]; then
+            echo -e "${BOLD}${C_CYAN}  ═══ $name ═══${RESET}"
+        elif [[ "${is_installed[$name]:-0}" == "1" ]]; then
+            echo -e "${DIM}${C_GRAY}    [${C_GREEN}✓${C_GRAY}] $name [installed]${RESET}\t$name\t$src\t1"
+        else
+            echo -e "${C_WHITE}    [ ] $name${RESET}\t$name\t$src\t0"
+        fi
+    done
+}
+
+run_fzf() {
+    build_menu | fzf --multi --ansi --cycle \
+        --layout=reverse-list --header-lines=5 \
+        --bind='ctrl-a:toggle-all' \
+        --delimiter=$'\t' --with-nth=1 2>/dev/null || true
+}
+
+parse_selection() {
+    local -n _repo=$2 _aur=$3 _flatpak=$4
+    while IFS=$'\t' read -r _ pkg src _; do
+        [[ -z "$pkg" ]] && continue
+        [[ "${is_installed[$pkg]:-0}" == "1" ]] && continue
+        case $src in
+            repo)    _repo+=("$pkg") ;;
+            aur)     _aur+=("$pkg") ;;
+            flatpak) _flatpak+=("$pkg") ;;
+        esac
+    done <<< "$1"
+}
+
+show_summary() {
+    local -n _repo=$1 _aur=$2 _flatpak=$3
+    echo
+    echo -e "  ${BOLD}${C_WHITE}Install these?${RESET}\n"
+    [[ ${#_repo[@]} -gt 0 ]] && echo -e "  ${C_CYAN}repo:${RESET}    ${_repo[*]}"
+    [[ ${#_aur[@]} -gt 0 ]] && echo -e "  ${C_YELLOW}aur:${RESET}     ${_aur[*]}"
+    [[ ${#_flatpak[@]} -gt 0 ]] && echo -e "  ${C_BLUE}flatpak:${RESET}  ${_flatpak[*]}"
+    echo
+    read -p "  Proceed? [y/N] " -n 1 -r || true
+    echo
+    [[ "$REPLY" == "y" || "$REPLY" == "Y" ]]
+}
+
+install_packages() {
+    local -n _repo=$1 _aur=$2 _flatpak=$3
+    local fail=0
+    [[ ${#_repo[@]} -gt 0 ]] && { echo; sudo pacman -S --needed --noconfirm "${_repo[@]}" || fail=1; }
+    [[ ${#_aur[@]} -gt 0 ]] && {
+        ! command -v paru &>/dev/null && sudo pacman -S --needed --noconfirm paru || true
+        echo; paru -S --needed --noconfirm "${_aur[@]}" || fail=1
+    }
+    [[ ${#_flatpak[@]} -gt 0 ]] && {
+        ! command -v flatpak &>/dev/null && sudo pacman -S --needed --noconfirm flatpak || true
+        echo; flatpak install -y "${_flatpak[@]}" || fail=1
+    }
+    [[ "$fail" -eq 0 ]] && echo -e "\n${BOLD}${C_GREEN}Done.${RESET}" || echo -e "\n${BOLD}${C_RED}Some failed.${RESET}"
+}
+
+main() {
+    [[ "$EUID" -eq 0 ]] && { echo -e "${BOLD}${C_RED}Don't run as root.${RESET}" >&2; exit 1; }
+    [[ ! -t 1 ]] && { echo "Need a terminal." >&2; exit 1; }
+    ! command -v fzf &>/dev/null && sudo pacman -S --noconfirm fzf
+
+    check_installed
+    local sel
+    sel=$(run_fzf)
+    [[ -z "$sel" ]] && { echo -e "\n${DIM}${C_GRAY}Cancelled.${RESET}"; exit 0; }
+
+    local -a repo=() aur=() flatpak=()
+    parse_selection "$sel" repo aur flatpak
+    local total=$((${#repo[@]} + ${#aur[@]} + ${#flatpak[@]}))
+    [[ "$total" -eq 0 ]] && { echo -e "\n${BOLD}${C_YELLOW}All selected packages are already installed.${RESET}"; exit 0; }
+
+    show_summary repo aur flatpak && install_packages repo aur flatpak
+}
+main
