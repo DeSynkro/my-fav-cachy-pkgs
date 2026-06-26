@@ -5,6 +5,8 @@ Whether it's for my own machines or for friends finally leaving Windows behind, 
 
 Built with a little help from opencode.
 
+Distributed under the [GNU General Public License v3.0](LICENSE).
+
 ![thumbnail](thumbnail.png)
 
 ## Usage
