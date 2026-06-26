@@ -6,7 +6,7 @@ C_RED='\033[31m'; C_GREEN='\033[32m'; C_YELLOW='\033[33m'
 C_BLUE='\033[34m'; C_CYAN='\033[36m'; C_WHITE='\033[37m'; C_GRAY='\033[90m'
 
 items=()
-add_item() { items+=("$1|$2|$3"); }
+add_item() { items+=("$1|$2|$3|${4:-$2}"); }
 
 add_item header "Media Production" ""
 add_item pkg    "audacity"         "repo"
@@ -80,7 +80,7 @@ add_item pkg    "syncthingtray"     "aur"
 
 add_item header "Flatpaks" ""
 add_item pkg    "appflowy"  "flatpak"
-add_item pkg    "parabolic" "flatpak"
+add_item pkg    "org.nickvision.tubeconverter"  "flatpak"  "parabolic"
 
 declare -A is_installed
 check_installed() {
@@ -104,13 +104,13 @@ build_menu() {
     echo "  ╚════════════════════════════════╝"
     echo ""
     for item in "${items[@]}"; do
-        IFS='|' read -r typ name src _ <<< "$item"
+        IFS='|' read -r typ pkg src disp <<< "$item"
         if [[ "$typ" == "header" ]]; then
-            echo -e "${BOLD}${C_CYAN}  ═══ $name ═══${RESET}"
-        elif [[ "${is_installed[$name]:-0}" == "1" ]]; then
-            echo -e "${DIM}${C_GRAY}    [${C_GREEN}✓${C_GRAY}] $name [installed]${RESET}\t$name\t$src\t1"
+            echo -e "${BOLD}${C_CYAN}  ═══ $pkg ═══${RESET}"
+        elif [[ "${is_installed[$pkg]:-0}" == "1" ]]; then
+            echo -e "${DIM}${C_GRAY}    [${C_GREEN}✓${C_GRAY}] $disp [installed]${RESET}\t$pkg\t$src\t1"
         else
-            echo -e "${C_WHITE}    [ ] $name${RESET}\t$name\t$src\t0"
+            echo -e "${C_WHITE}    [ ] $disp${RESET}\t$pkg\t$src\t0"
         fi
     done
 }
