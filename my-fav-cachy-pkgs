@@ -68,17 +68,22 @@ add_item header "VPN & Remote" ""
 add_item pkg    "proton-vpn-gtk-app"  "repo"
 
 add_item header "AUR Only" ""
-add_item pkg    "beacn-utility"     "aur"
-add_item pkg    "filebot"           "aur"
-add_item pkg    "lmstudio-bin"      "aur"
+add_item subheader "Gaming" ""
 add_item pkg    "lsfg-vk-git"       "aur"
 add_item pkg    "millennium"        "aur"
+add_item pkg    "r2modman-bin"      "aur"
+add_item subheader "Media & Photos" ""
+add_item pkg    "filebot"           "aur"
+add_item subheader "AI & Notes" ""
+add_item pkg    "lmstudio-bin"      "aur"
+add_item subheader "Remote & Sync" ""
+add_item pkg    "rustdesk-bin"      "aur"
+add_item pkg    "syncthingtray"     "aur"
+add_item subheader "Utilities" ""
+add_item pkg    "beacn-utility"     "aur"
 add_item pkg    "ookla-speedtest-bin" "aur"
 add_item pkg    "pipeweaver"        "aur"
-add_item pkg    "r2modman-bin"      "aur"
-add_item pkg    "rustdesk-bin"      "aur"
 add_item pkg    "sc0710-dkms-git"   "aur"
-add_item pkg    "syncthingtray"     "aur"
 
 add_item header "Flatpaks" ""
 add_item pkg    "com.github.tchx84.Flatseal"    "flatpak"  "flatseal"
@@ -109,6 +114,8 @@ build_menu() {
         IFS='|' read -r typ pkg src disp <<< "$item"
         if [[ "$typ" == "header" ]]; then
             echo -e "${BOLD}${C_CYAN}  ═══ $pkg ═══${RESET}"
+        elif [[ "$typ" == "subheader" ]]; then
+            echo -e "${DIM}${C_CYAN}    ▸ $pkg${RESET}"
         elif [[ "${is_installed[$pkg]:-0}" == "1" ]]; then
             echo -e "${DIM}${C_GRAY}    [${C_GREEN}✓${C_GRAY}] $disp [installed]${RESET}\t$pkg\t$src\t1"
         else

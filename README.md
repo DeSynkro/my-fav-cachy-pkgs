@@ -41,3 +41,11 @@ Arrow keys to navigate, Tab to toggle packages, Enter to review and install.
 | VPN & Remote | 1 | repo |
 | AUR Only | 11 | aur |
 | Flatpaks | 2 | flatpak |
+
+AUR packages are grouped by topic inside the picker:
+
+- **Gaming** — `lsfg-vk-git`, `millennium`, `r2modman-bin`
+- **Media & Photos** — `filebot`
+- **AI & Notes** — `lmstudio-bin`
+- **Remote & Sync** — `rustdesk-bin`, `syncthingtray`
+- **Utilities** — `beacn-utility`, `ookla-speedtest-bin`, `pipeweaver`, `sc0710-dkms-git`
