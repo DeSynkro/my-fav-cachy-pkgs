@@ -11,6 +11,7 @@
 - Fixed background color codes printing as literal text instead of rendering
 - Reorganised into source then category, and added ufw alongside gufw
 - Updated librewolf and vesktop to match their CachyOS repo packages
+- Hardened the installer: no silent package removals, absolute paths for privileged commands, pre-flight validation, and a correct exit code
 
 ## 1.0 - 2026-06-26
 

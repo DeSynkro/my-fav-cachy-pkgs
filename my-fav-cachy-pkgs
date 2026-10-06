@@ -17,6 +17,11 @@ C_RED=$'\033[38;2;224;108;117m'
 
 FZF_THEME='bg:#1e2126,bg+:#262b32,fg:#c6d5e6,fg+:#eaf2fb,hl:#2b313a,hl+:#2d4a63,gutter:#1e2126,border:#39414c,header:#7f8c9b,label:#7f8c9b,info:#6b7683,prompt:#6cb6ff,pointer:#6cb6ff,marker:#6cb6ff,spinner:#6cb6ff'
 
+# Always hand the terminal back with a clean pen, even on Ctrl-C.
+trap 'printf "%s" "$RESET"' EXIT
+trap 'printf "%s" "$RESET"; exit 130' INT
+trap 'printf "%s" "$RESET"; exit 143' TERM
+
 items=()
 add_item() { items+=("$1|$2|$3|${4:-$2}"); }
 
@@ -117,8 +122,8 @@ check_installed() {
         IFS='|' read -r typ name src _ <<< "$item"
         [[ "$typ" != "pkg" ]] && continue
         case $src in
-            flatpak) echo "$flatpaks" | grep -iq "$name" && is_installed["$name"]=1 || true ;;
-            *) echo "$pkgs" | grep -qxF "$name" && is_installed["$name"]=1 || true ;;
+            flatpak) echo "$flatpaks" | grep -iqF -- "$name" && is_installed["$name"]=1 || true ;;
+            *) echo "$pkgs" | grep -qxF -- "$name" && is_installed["$name"]=1 || true ;;
         esac
     done
 }
@@ -165,25 +170,25 @@ run_fzf() {
 }
 
 parse_selection() {
-    local -n _repo=$2 _aur=$3 _flatpak=$4
+    local -n __mfcp_repo=$2 __mfcp_aur=$3 __mfcp_flatpak=$4
     while IFS=$'\t' read -r _ pkg src _; do
         [[ -z "$pkg" ]] && continue
-        [[ "${is_installed[$pkg]:-0}" == "1" ]] && continue
+        [[ "${is_installed["$pkg"]:-0}" == "1" ]] && continue
         case $src in
-            repo)    _repo+=("$pkg") ;;
-            aur)     _aur+=("$pkg") ;;
-            flatpak) _flatpak+=("$pkg") ;;
+            repo)    __mfcp_repo+=("$pkg") ;;
+            aur)     __mfcp_aur+=("$pkg") ;;
+            flatpak) __mfcp_flatpak+=("$pkg") ;;
         esac
     done <<< "$1"
 }
 
 show_summary() {
-    local -n _repo=$1 _aur=$2 _flatpak=$3
+    local -n __mfcp_repo=$1 __mfcp_aur=$2 __mfcp_flatpak=$3
     echo
     echo -e "${BG}${BOLD}${C_WHITE}Install these?${RESET}\n"
-    [[ ${#_repo[@]} -gt 0 ]] && echo -e "${BG}${C_CYAN}repo:${RESET}${BG}    ${_repo[*]}"
-    [[ ${#_aur[@]} -gt 0 ]] && echo -e "${BG}${C_YELLOW}aur:${RESET}${BG}     ${_aur[*]}"
-    [[ ${#_flatpak[@]} -gt 0 ]] && echo -e "${BG}${C_BLUE}flatpak:${RESET}${BG}  ${_flatpak[*]}"
+    [[ ${#__mfcp_repo[@]} -gt 0 ]] && echo -e "${BG}${C_CYAN}repo:${RESET}${BG}    ${__mfcp_repo[*]}"
+    [[ ${#__mfcp_aur[@]} -gt 0 ]] && echo -e "${BG}${C_YELLOW}aur:${RESET}${BG}     ${__mfcp_aur[*]}"
+    [[ ${#__mfcp_flatpak[@]} -gt 0 ]] && echo -e "${BG}${C_BLUE}flatpak:${RESET}${BG}  ${__mfcp_flatpak[*]}"
     echo
     read -p "${BG}  Proceed? [y/N] " -n 1 -r || true
     echo
@@ -191,30 +196,52 @@ show_summary() {
 }
 
 install_packages() {
-    local -n _repo=$1 _aur=$2 _flatpak=$3
+    local -n __mfcp_repo=$1 __mfcp_aur=$2 __mfcp_flatpak=$3
     local fail=0
-    [[ ${#_repo[@]} -gt 0 ]] && {
+
+    if [[ ${#__mfcp_repo[@]} -gt 0 ]]; then
+        # Dry-run first: catches stale or renamed package names before we
+        # touch the system, instead of losing the whole batch mid-install.
+        if err=$(pacman -Sp "${__mfcp_repo[@]}" 2>&1 >/dev/null); then
+            echo; printf '%s' "$BG"
+            sudo /usr/bin/pacman -S --needed "${__mfcp_repo[@]}" || fail=1
+        else
+            echo -e "${BG}${C_RED}Could not resolve every requested package:${RESET}"
+            printf '%s\n' "$err" | sed 's/^/  /'
+            fail=1
+        fi
+    fi
+
+    if [[ ${#__mfcp_aur[@]} -gt 0 ]]; then
+        command -v paru &>/dev/null || sudo /usr/bin/pacman -S --needed paru || true
         echo; printf '%s' "$BG"
-        sudo pacman -S --needed --noconfirm "${_repo[@]}" || fail=1
-    }
-    [[ ${#_aur[@]} -gt 0 ]] && {
-        ! command -v paru &>/dev/null && sudo pacman -S --needed --noconfirm paru || true
+        paru -S --needed "${__mfcp_aur[@]}" || fail=1
+    fi
+
+    if [[ ${#__mfcp_flatpak[@]} -gt 0 ]]; then
+        command -v flatpak &>/dev/null || sudo /usr/bin/pacman -S --needed flatpak || true
+        flatpak remote-add --if-not-exists flathub \
+            https://dl.flathub.org/repo/flathub.flatpakrepo >/dev/null 2>&1 || true
         echo; printf '%s' "$BG"
-        paru -S --needed --noconfirm "${_aur[@]}" || fail=1
-    }
-    [[ ${#_flatpak[@]} -gt 0 ]] && {
-        ! command -v flatpak &>/dev/null && sudo pacman -S --needed --noconfirm flatpak || true
-        echo; printf '%s' "$BG"
-        flatpak install -y "${_flatpak[@]}" || fail=1
-    }
-    [[ "$fail" -eq 0 ]] && echo -e "\n${BG}${BOLD}${C_GREEN}Done.${RESET}" || echo -e "\n${BG}${BOLD}${C_RED}Some failed.${RESET}"
+        flatpak install "${__mfcp_flatpak[@]}" || fail=1
+    fi
+
+    if [[ "$fail" -eq 0 ]]; then
+        echo -e "\n${BG}${BOLD}${C_GREEN}Done.${RESET}"
+    else
+        echo -e "\n${BG}${BOLD}${C_RED}Some failed.${RESET}"
+        return 1
+    fi
 }
 
 main() {
-    [[ "${1:-}" == "--version" ]] && { echo "my-fav-cachy-pkgs $VERSION"; exit 0; }
+    [[ "${1:-}" == "--version" ]] && { trap - EXIT; echo "my-fav-cachy-pkgs $VERSION"; exit 0; }
     [[ "$EUID" -eq 0 ]] && { echo -e "${BG}${BOLD}${C_RED}Don't run as root.${RESET}" >&2; exit 1; }
     [[ ! -t 1 ]] && { echo "Need a terminal." >&2; exit 1; }
-    ! command -v fzf &>/dev/null && sudo pacman -S --noconfirm fzf
+    if ! command -v fzf &>/dev/null; then
+        echo -e "${BG}${C_YELLOW}fzf is required. Installing it now...${RESET}"
+        sudo /usr/bin/pacman -S --needed fzf
+    fi
 
     check_installed
     local sel
@@ -227,7 +254,11 @@ main() {
     [[ "$total" -eq 0 ]] && { echo -e "\n${BG}${BOLD}${C_YELLOW}All selected packages are already installed.${RESET}"; exit 0; }
 
     paint_bg
-    show_summary repo aur flatpak && install_packages repo aur flatpak
+    local rc=0
+    if show_summary repo aur flatpak; then
+        install_packages repo aur flatpak || rc=$?
+    fi
     printf '%s' "$RESET"
+    return "$rc"
 }
 main "$@"
