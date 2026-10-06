@@ -27,26 +27,40 @@ Arrow keys to navigate, Tab to toggle packages, Enter to review and install.
 - Confirmation step before any system changes
 - sudo used only for actual installation
 
-## Packages by section
+## Packages by source and category
 
-| Section | Count | Source |
-|---|---|---|
-| Media Production | 9 | repo |
-| Browsers & Internet | 8 | repo |
-| Gaming | 5 | repo |
-| Productivity & Cloud | 5 | repo |
-| System Tools | 11 | repo |
-| Media Playback | 2 | repo |
-| Security | 1 | repo |
-| GPU & Display | 3 | repo |
-| VPN & Remote | 1 | repo |
-| AUR Only | 14 | aur |
-| Flatpaks | 2 | flatpak |
+Packages are grouped two levels deep: source first, then category.
 
-AUR packages are grouped by topic inside the picker:
+### CachyOS Repo (47)
 
-- **Gaming** — `millennium`, `r2modman-bin`, `steamcmd`
-- **Media & Photos** — `filebot`, `qwinff`, `upscayl-bin`
-- **AI & Notes** — `lmstudio-bin`, `opencode-bin`, `triliumnext-bin`
-- **Remote & Sync** — `rustdesk-bin`
-- **Utilities** — `beacn-utility`, `ookla-speedtest-bin`, `pipeweaver`, `sc0710-dkms-git`
+| Category | Count |
+|---|---|
+| Media Production | 8 |
+| Media Playback | 3 |
+| Browsers & Comms | 5 |
+| File Transfer | 4 |
+| Gaming | 5 |
+| Productivity | 2 |
+| Containers & Dev | 3 |
+| Backup & Disks | 4 |
+| Desktop & Utilities | 5 |
+| GPU & Display | 3 |
+| Security | 3 |
+| Remote & Network | 2 |
+
+### AUR (14)
+
+| Category | Count |
+|---|---|
+| Gaming | 3 |
+| Media & Photos | 3 |
+| AI & Notes | 3 |
+| Remote & Sync | 1 |
+| Utilities | 4 |
+
+### Flatpak (2)
+
+| Category | Count |
+|---|---|
+| Permissions | 1 |
+| Media | 1 |
