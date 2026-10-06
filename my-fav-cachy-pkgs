@@ -1,6 +1,8 @@
 #!/bin/bash
 set -euo pipefail
 
+VERSION='1.1'
+
 BOLD='\033[1m'; DIM='\033[2m'; RESET='\033[0m'
 C_RED='\033[31m'; C_GREEN='\033[32m'; C_YELLOW='\033[33m'
 C_BLUE='\033[34m'; C_CYAN='\033[36m'; C_WHITE='\033[37m'; C_GRAY='\033[90m'
@@ -79,7 +81,7 @@ add_item pkg    "sc0710-dkms-git"   "aur"
 add_item pkg    "syncthingtray"     "aur"
 
 add_item header "Flatpaks" ""
-add_item pkg    "appflowy"  "flatpak"
+add_item pkg    "com.github.tchx84.Flatseal"    "flatpak"  "flatseal"
 add_item pkg    "org.nickvision.tubeconverter"  "flatpak"  "parabolic"
 
 declare -A is_installed
@@ -98,10 +100,10 @@ check_installed() {
 }
 
 build_menu() {
-    echo "  ╔════════════════════════════════╗"
-    echo "  ║      MY FAV CACHY PKGS         ║"
-    echo "  ║     pick • Tab • Enter         ║"
-    echo "  ╚════════════════════════════════╝"
+    echo "  ╔══════════════════════════════════╗"
+    echo "  ║       MY FAV CACHY PKGS          ║"
+    printf '  ║  v%-8s  • pick • Tab • Enter ║\n' "$VERSION"
+    echo "  ╚══════════════════════════════════╝"
     echo ""
     for item in "${items[@]}"; do
         IFS='|' read -r typ pkg src disp <<< "$item"
@@ -164,6 +166,7 @@ install_packages() {
 }
 
 main() {
+    [[ "${1:-}" == "--version" ]] && { echo "my-fav-cachy-pkgs $VERSION"; exit 0; }
     [[ "$EUID" -eq 0 ]] && { echo -e "${BOLD}${C_RED}Don't run as root.${RESET}" >&2; exit 1; }
     [[ ! -t 1 ]] && { echo "Need a terminal." >&2; exit 1; }
     ! command -v fzf &>/dev/null && sudo pacman -S --noconfirm fzf
@@ -180,4 +183,4 @@ main() {
 
     show_summary repo aur flatpak && install_packages repo aur flatpak
 }
-main
+main "$@"

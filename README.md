@@ -5,6 +5,8 @@ Whether it's for my own machines or for friends finally leaving Windows behind, 
 
 Built with a little help from opencode.
 
+Current version: **1.1** (run `./my-fav-cachy-pkgs --version`). Release notes in [CHANGELOG.md](CHANGELOG.md).
+
 Distributed under the [GNU General Public License v3.0](LICENSE).
 
 ![thumbnail](thumbnail.png)
