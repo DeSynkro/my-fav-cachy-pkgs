@@ -32,13 +32,13 @@ Arrow keys to navigate, Tab to toggle packages, Enter to review and install.
 | Section | Count | Source |
 |---|---|---|
 | Media Production | 9 | repo |
-| Browsers & Internet | 7 | repo |
-| Gaming | 3 | repo |
-| Productivity & Cloud | 4 | repo |
-| System Tools | 8 | repo |
+| Browsers & Internet | 8 | repo |
+| Gaming | 5 | repo |
+| Productivity & Cloud | 5 | repo |
+| System Tools | 11 | repo |
 | Media Playback | 2 | repo |
 | Security | 1 | repo |
-| GPU & Display | 2 | repo |
+| GPU & Display | 3 | repo |
 | VPN & Remote | 1 | repo |
 | AUR Only | 14 | aur |
 | Flatpaks | 2 | flatpak |
