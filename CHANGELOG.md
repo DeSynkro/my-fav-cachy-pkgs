@@ -9,6 +9,7 @@
 - Removed AUR packages: lsfg-vk-git, syncthingtray
 - Added a dark blue-gray theme with a solid background, so the UI stays readable on transparent terminals
 - Added git, shelly, heroic-games-launcher, sc-controller, syncthingtray, gpu-screen-recorder-notification
+- Fixed background color codes printing as literal text instead of rendering
 
 ## 1.0 - 2026-06-26
 
