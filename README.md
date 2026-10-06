@@ -23,6 +23,7 @@ Arrow keys to navigate, Tab to toggle packages, Enter to review and install.
 
 - One menu for official repos, AUR (via paru), and Flatpaks
 - Installed packages dimmed with `[installed]` badge
+- Dark gray background, so it stays readable on transparent terminals
 - Confirmation step before any system changes
 - sudo used only for actual installation
 
